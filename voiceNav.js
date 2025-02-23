@@ -1,4 +1,3 @@
-// voiceNav.js
 let recognition = null;
 let isListening = false;
 
@@ -28,7 +27,7 @@ function initVoiceNav() {
     console.error('[VoiceNav] Error:', event.error);
   };
 
-  // If we want auto-restart:
+  // Auto-restart if the user wants continuous listening
   recognition.onend = () => {
     if (isListening) {
       recognition.start();
@@ -43,15 +42,13 @@ function toggleVoiceNav() {
   if (!recognition) {
     initVoiceNav();
   }
-  if (!recognition) {
-    return; // Could not init
-  }
+  if (!recognition) return; // Could not initialize
 
   if (!isListening) {
     isListening = true;
     recognition.start();
     console.log('[VoiceNav] ON');
-    alert('Voice navigation ON. Try commands like "Scroll down", "Go back", etc.');
+    alert('Voice navigation ON. Try commands like "Scroll down", "Go back", "Summarize page", etc.');
   } else {
     isListening = false;
     recognition.stop();
@@ -63,12 +60,10 @@ function toggleVoiceNav() {
 /**
  * Handle recognized speech command.
  */
-// scrollInterval is already declared later in the file, removing duplicate declaration
-
 function handleVoiceCommand(transcript) {
   const command = transcript.toLowerCase();
 
-  // Add this new condition before other commands
+  // Summarize the page
   if (command.includes('summarize page')) {
     summarizePage();
     return;
@@ -113,13 +108,13 @@ function handleVoiceCommand(transcript) {
     return;
   }
 
-  // "Open tab X"
+  // "Open tab X" or "Open X"
   if (command.startsWith('open')) {
     const urlPart = command.replace('open', '').trim();
     if (urlPart) {
-      openNewTab(urlPart+'.com');
+      openNewTab(urlPart + '.com');
     } else {
-      alert('No URL specified. Try "Open tab example.com".');
+      alert('No URL specified. Try "Open example.com".');
     }
     return;
   }
@@ -128,16 +123,12 @@ function handleVoiceCommand(transcript) {
   console.log('[VoiceNav] Unrecognized command:', transcript);
 }
 
-// Add these new functions after handleVoiceCommand
+// Continuous scroll logic
 let scrollInterval = null;
 
 function startContinuousScroll(direction) {
-  // Clear any existing scroll first
   stopContinuousScroll();
-  
-  // Set smaller step size and faster interval for smoother scrolling
   const step = direction === 'down' ? 30 : -30;
-  
   scrollInterval = setInterval(() => {
     window.scrollBy({
       top: step,
@@ -170,9 +161,7 @@ function clickLinkByText(text) {
 }
 
 /**
- * Open a new tab. We just do window.open here;
- * If you prefer chrome.tabs.create, you need "tabs" permission
- * and run from background/popup script.
+ * Open a new tab.
  */
 function openNewTab(urlPart) {
   let urlToOpen = urlPart;
@@ -182,17 +171,14 @@ function openNewTab(urlPart) {
   window.open(urlToOpen, '_blank');
 }
 
-// Add these new functions at the end of the file before the message listener
+/**
+ * Summarize the page using GPT
+ */
 async function summarizePage() {
   try {
-    // Get all text content from the page
     const pageContent = document.body.innerText;
     const summary = await getSummaryFromGPT(pageContent);
-    
-    // Create overlay for the summary
     createSummaryOverlay(summary);
-    
-    // Read the summary aloud
     speakText(summary);
   } catch (error) {
     console.error('Summarization error:', error);
@@ -200,6 +186,9 @@ async function summarizePage() {
   }
 }
 
+/**
+ * Create an overlay showing the summary.
+ */
 function createSummaryOverlay(summary) {
   let overlay = document.querySelector('.summary-overlay');
   if (!overlay) {
@@ -212,93 +201,91 @@ function createSummaryOverlay(summary) {
       max-width: 400px;
       max-height: 80vh;
       overflow-y: auto;
-      background-color: rgba(0, 0, 0, 0.9);
-      color: white;
+      background-color: rgba(30, 30, 30, 0.95);
+      color: #fff;
       padding: 20px;
       border-radius: 10px;
       z-index: 999999;
-      font-family: sans-serif;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     `;
     document.body.appendChild(overlay);
   }
+
   overlay.innerHTML = `
-    <h3>Page Summary</h3>
-    <p>${summary}</p>
+    <h3 style="margin-top: 0; font-size: 16px; color: #66b3ff;">Page Summary</h3>
+    <p style="font-size: 14px; line-height: 1.4;">${summary}</p>
     <button onclick="this.parentElement.remove()" style="
-      padding: 5px 10px;
+      padding: 6px 12px;
       margin-top: 10px;
-      background: #666;
+      background: #555;
       color: white;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 13px;
     ">Close</button>
   `;
 }
 
+/**
+ * Get a GPT-based summary for the page
+ */
 async function getSummaryFromGPT(content) {
-  try {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({
-        type: 'SUMMARIZE_TEXT',
-        content: content.substring(0, 5000) // Limit content length
-      }, response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
-        if (response && response.error) {
-          reject(new Error(response.error));
-          return;
-        }
-        if (response && response.summary) {
-          resolve(response.summary);
-        } else {
-          reject(new Error('Invalid response from summarization'));
-        }
-      });
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      type: 'SUMMARIZE_TEXT',
+      content: content.substring(0, 5000) // limit for token safety
+    }, response => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (response && response.error) {
+        reject(new Error(response.error));
+        return;
+      }
+      if (response && response.summary) {
+        resolve(response.summary);
+      } else {
+        reject(new Error('Invalid response from summarization'));
+      }
     });
-  } catch (error) {
-    throw new Error('Failed to get summary: ' + error.message);
-  }
+  });
 }
 
+/**
+ * Speak out loud (TTS) the given text
+ */
 function speakText(text) {
-  // Cancel any ongoing speech
   window.speechSynthesis.cancel();
-
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
   utterance.rate = 1.0;
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
 
-  // Add error handling
   utterance.onerror = (event) => {
     console.error('[VoiceNav] Speech synthesis error:', event.error);
     alert('Could not read the text aloud. Please try again.');
   };
 
-  // Check if synthesis is available
   if (!window.speechSynthesis) {
     console.error('[VoiceNav] Speech synthesis not supported');
     alert('Your browser does not support text-to-speech.');
     return;
   }
 
-  // Ensure voices are loaded
-  if (speechSynthesis.getVoices().length === 0) {
+  const voices = speechSynthesis.getVoices();
+  if (voices.length === 0) {
     speechSynthesis.addEventListener('voiceschanged', () => {
-      const voices = speechSynthesis.getVoices();
-      // Try to find an English voice
-      const englishVoice = voices.find(voice => voice.lang.includes('en-'));
+      const englishVoice = speechSynthesis.getVoices().find(voice => voice.lang.includes('en-'));
       if (englishVoice) {
         utterance.voice = englishVoice;
       }
       window.speechSynthesis.speak(utterance);
     });
   } else {
-    const voices = speechSynthesis.getVoices();
     const englishVoice = voices.find(voice => voice.lang.includes('en-'));
     if (englishVoice) {
       utterance.voice = englishVoice;
