@@ -44,12 +44,15 @@
         line-height: 1.3;
       }
       .slider-container {
-        margin-top: 15px;
+        margin-top: 6px;
         width: 80%;
+        display: none; /* hidden by default, shown after toggle ON */
+        flex-direction: column;
+        align-items: center;
       }
-      .level-label {
-        margin-top: 5px;
-        font-size: 14px;
+      .slider-label {
+        margin: 5px 0;
+        font-size: 13px;
         color: #333;
       }
       input[type="range"] {
@@ -61,24 +64,29 @@
     <div class="container">
       <h3>WebAble Controls</h3>
 
-      <!-- Toggle voice navigation -->
+      <!-- Voice, alt text, read alt text -->
       <button id="voiceToggleBtn">Toggle Voice Navigation</button>
-
-      <!-- AI Alt Text Generation -->
       <button id="altTextToggleBtn">Toggle AI Alt Text</button>
-
-      <!-- Read Alt Text on Click -->
       <button id="readAltTextToggleBtn">Toggle Alt Text Reading</button>
 
-      <div class="slider-container">
-        <label for="simplifyRange" class="level-label">Reading Level (1=Simple, 3=Original, 5=Advanced)</label>
-        <input type="range" id="simplifyRange" min="1" max="5" value="3" />
+      <!-- Dyslexia toggle & slider -->
+      <button id="dyslexiaToggleBtn">Dyslexia-Friendly Mode</button>
+      <div id="fontSizeSliderContainer" class="slider-container" style="display:none;">
+        <div class="slider-label">Text Size</div>
+        <input type="range" id="dyslexiaFontSizeRange" min="14" max="30" value="18"/>
       </div>
 
+      <!-- High Contrast Mode -->
+      <button id="highContrastToggleBtn">High Contrast Mode</button>
+
+      <!-- Focus lens & AI layout -->
+      <button id="focusLensToggleBtn">Focus Lens Mode</button>
+      <button id="accessibleLayoutBtn">Accessible Layout (AI)</button>
+
       <p class="notice">
-        Use your voice to scroll, navigate, or summarize pages.<br/>
-        Enable AI alt text for images & read them aloud!<br/>
-        Adjust reading level with the slider.
+        Use your voice to navigate or summarize pages.<br/>
+        Right-click highlighted text to simplify it!<br/>
+        Dyslexia font + slider, High Contrast, Focus Lens, & more.
       </p>
     </div>
     <script src="popup.js"></script>

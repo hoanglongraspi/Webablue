@@ -1,14 +1,14 @@
 {
   "name": "WebAble Extension",
-  "version": "1.4",
+  "version": "1.5",
   "manifest_version": 3,
-  "description": "Voice nav, video transcription, AI alt text, and simplified rewriting on right-click.",
+  "description": "Voice nav, alt text, highlight rewriting, plus Dyslexia Font, Focus Lens, and Accessible Layout toggles.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
     "tabs",
-    "contextMenus"          // Needed for the right-click context menu
+    "contextMenus"
   ],
   "background": {
     "service_worker": "service_worker.js"
@@ -35,6 +35,13 @@
       "matches": ["<all_urls>"],
       "js": [
         "contentScriptReplaceHighlight.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "contentScriptAccessibilityEnhancements.js"
       ],
       "run_at": "document_idle"
     }
