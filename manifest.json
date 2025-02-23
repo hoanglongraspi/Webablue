@@ -1,0 +1,28 @@
+{
+  "name": "WebAble Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "description": "Voice-based navigation + Video transcription (OpenAI Whisper).",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "contentScriptTranscription.js",
+        "voiceNav.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
